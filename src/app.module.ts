@@ -3,6 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { CategoriesModule } from './categories/categories.module';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { AppService } from './app.service';
       entities: [], // Chúng ta sẽ thêm các bảng (Entity) vào đây sau
       synchronize: true, // LƯU Ý: Chỉ dùng true khi dev (tự động tạo bảng), production phải để false
     }),
+    CategoriesModule,
   ],
   controllers: [AppController],
   providers: [AppService],
