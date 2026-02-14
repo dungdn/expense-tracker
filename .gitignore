@@ -1,2 +1,4 @@
-node_modules
-\n# build output\n/dist\n\n# macOS\n.DS_Store
+.env
+dist/
+node_modules/
+*.log
