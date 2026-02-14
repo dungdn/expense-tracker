@@ -1,0 +1,2 @@
+node_modules
+\n# build output\n/dist\n\n# macOS\n.DS_Store
