@@ -1,13 +1,18 @@
-import { Entity, PrimaryGeneratedColumn, Column } from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from 'typeorm';
+import { Transaction } from '../transactions/entities/transaction.entity'; // <--- Import Transaction
 
-@Entity() // Đánh dấu class này là một bảng trong DB
+@Entity()
 export class Category {
   @PrimaryGeneratedColumn()
   id: number;
 
   @Column()
-  name: string; // Tên danh mục (VD: Ăn uống)
+  name: string;
 
   @Column({ nullable: true })
-  description: string; // Mô tả (tùy chọn)
+  description: string;
+
+  // 1 Category có nhiều Transaction
+  @OneToMany(() => Transaction, (transaction) => transaction.category)
+  transactions: Transaction[];
 }
