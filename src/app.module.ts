@@ -4,6 +4,7 @@ import { TypeOrmModule } from "@nestjs/typeorm";
 import { AppController } from "./app.controller";
 import { AppService } from "./app.service";
 import { CategoriesModule } from "./categories/categories.module";
+import { TransactionsModule } from "./transactions/transactions.module";
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { CategoriesModule } from "./categories/categories.module";
       synchronize: true, // LƯU Ý: Chỉ dùng true khi dev (tự động tạo bảng), production phải để false
     }),
     CategoriesModule,
+    TransactionsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
