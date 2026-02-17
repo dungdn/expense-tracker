@@ -10,7 +10,9 @@ import {
 } from "@nestjs/common";
 import { CategoriesService } from "./categories.service";
 import { CreateCategoryDto } from "./create-category.dto";
+import { ApiTags } from '@nestjs/swagger'; // <--- Import ApiTags
 
+@ApiTags('Categories') // <--- Gắn thẻ để gom nhóm trong giao diện Swagger
 @Controller("categories")
 export class CategoriesController {
   constructor(private readonly categoriesService: CategoriesService) {}
