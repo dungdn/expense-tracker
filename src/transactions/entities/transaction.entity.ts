@@ -1,5 +1,6 @@
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn } from 'typeorm';
 import { Category } from '../../categories/category.entity'; // <--- Import Category từ thư mục cha
+import { User } from '../../users/entities/user.entity'; // <--- Import User
 
 @Entity()
 export class Transaction {
@@ -19,4 +20,9 @@ export class Transaction {
   @ManyToOne(() => Category, (category) => category.transactions, { onDelete: 'SET NULL' })
   @JoinColumn({ name: 'category_id' })
   category: Category;
+
+  // --- Thêm mối quan hệ với User ---
+  @ManyToOne(() => User)
+  @JoinColumn({ name: 'user_id' })
+  user: User;
 }
