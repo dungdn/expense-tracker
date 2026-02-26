@@ -11,35 +11,52 @@ export class CategoriesService {
     private categoriesRepository: Repository<Category>,
   ) {}
 
-  // 1. Tạo (Đã làm)
-  async create(createCategoryDto: CreateCategoryDto): Promise<Category> {
-    const newCategory = this.categoriesRepository.create(createCategoryDto);
+  // 1. TẠO: Gắn thêm chủ sở hữu
+  async create(createCategoryDto: CreateCategoryDto, userId: number): Promise<Category> {
+    const newCategory = this.categoriesRepository.create({
+      ...createCategoryDto,
+      user: { id: userId }, // Đóng dấu chủ sở hữu
+    });
     return await this.categoriesRepository.save(newCategory);
   }
 
-  // 2. Xem tất cả
-  async findAll(): Promise<Category[]> {
-    return await this.categoriesRepository.find();
+  // 2. XEM TẤT CẢ: Chỉ lấy của user này
+  async findAll(userId: number): Promise<Category[]> {
+    return await this.categoriesRepository.find({
+      where: { user: { id: userId } }, // Lọc theo user_id
+    });
   }
 
-  // 3. Xem một cái theo ID
-  async findOne(id: number): Promise<Category> {
-    const category = await this.categoriesRepository.findOne({ where: { id } });
+  // 3. XEM CHI TIẾT: Phải đúng ID danh mục VÀ đúng chủ sở hữu
+  async findOne(id: number, userId: number): Promise<Category> {
+    const category = await this.categoriesRepository.findOne({
+      where: { id, user: { id: userId } },
+    });
+
     if (!category) {
-      throw new NotFoundException(`Không tìm thấy danh mục có ID = ${id}`);
+      throw new NotFoundException(`Không tìm thấy danh mục hoặc bạn không có quyền truy cập`);
     }
     return category;
   }
 
-  // 4. Cập nhật (Sửa)
-  async update(id: number, updateData: Partial<CreateCategoryDto>): Promise<Category> {
+  // 4. CẬP NHẬT: Phải check quyền trước khi sửa
+  async update(id: number, updateData: Partial<CreateCategoryDto>, userId: number): Promise<Category> {
+    // Gọi hàm findOne để kiểm tra xem danh mục có tồn tại VÀ có thuộc về user này không
+    await this.findOne(id, userId);
+
+    // Nếu qua được bước trên (không bị throw error), tiến hành update
     await this.categoriesRepository.update(id, updateData);
-    return this.findOne(id); // Trả về kết quả sau khi update
+
+    // Trả về kết quả mới nhất
+    return this.findOne(id, userId);
   }
 
-  // 5. Xóa
-  async remove(id: number): Promise<void> {
-    await this.findOne(id); // Kiểm tra xem có tồn tại không trước khi xóa
+  // 5. XÓA: Phải check quyền trước khi xóa
+  async remove(id: number, userId: number): Promise<void> {
+    // Kiểm tra quyền sở hữu
+    await this.findOne(id, userId);
+
+    // Xóa khỏi database
     await this.categoriesRepository.delete(id);
   }
 }

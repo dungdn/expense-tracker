@@ -11,25 +11,27 @@ export class ReportsService {
   ) {}
 
   // 1. Tính tổng chi tiêu (Tất cả thời gian)
-  async getTotalSpending() {
-    // Sử dụng QueryBuilder để tính tổng cột 'amount'
+  async getTotalSpending(userId: number) {
     const result = await this.transactionsRepository
       .createQueryBuilder('transaction')
-      .select('SUM(transaction.amount)', 'total') // SELECT SUM(amount) AS total
-      .getRawOne(); // Trả về kết quả thô (không qua Entity)
+      .select('SUM(transaction.amount)', 'total')
+      // Thêm điều kiện LỌC THEO USER
+      .where('transaction.user_id = :userId', { userId }) 
+      .getRawOne();
 
-    // Nếu chưa có chi tiêu nào, trả về 0
     return { total: parseFloat(result.total) || 0 };
   }
 
   // 2. Thống kê theo Danh mục (Ví dụ: Ăn uống hết bao nhiêu, Di chuyển hết bao nhiêu)
-  async getSpendingByCategory() {
+  async getSpendingByCategory(userId: number) {
     return await this.transactionsRepository
       .createQueryBuilder('transaction')
-      .leftJoin('transaction.category', 'category') // JOIN với bảng Category
-      .select('category.name', 'categoryName')      // Lấy tên danh mục
-      .addSelect('SUM(transaction.amount)', 'totalAmount') // Tính tổng tiền
-      .groupBy('category.name')                     // Gom nhóm theo tên danh mục
-      .getRawMany(); // Trả về danh sách kết quả thô
+      .leftJoin('transaction.category', 'category')
+      .select('category.name', 'categoryName')
+      .addSelect('SUM(transaction.amount)', 'totalAmount')
+      // Thêm điều kiện LỌC THEO USER
+      .where('transaction.user_id = :userId', { userId }) 
+      .groupBy('category.name')
+      .getRawMany();
   }
 }

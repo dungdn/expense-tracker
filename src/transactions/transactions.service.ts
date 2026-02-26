@@ -17,51 +17,76 @@ export class TransactionsService {
     private categoriesRepository: Repository<Category>,
   ) {}
 
-  async create(createTransactionDto: CreateTransactionDto) {
+  async create(createTransactionDto: CreateTransactionDto, userId: number) {
     const { categoryId, ...transactionData } = createTransactionDto;
 
-    // 1. Kiểm tra Category có tồn tại không?
-    const category = await this.categoriesRepository.findOne({ where: { id: categoryId } });
+    // 1. Kiểm tra Category có tồn tại VÀ có thuộc về user này không
+    const category = await this.categoriesRepository.findOne({
+      where: { id: categoryId, user: { id: userId } },
+    });
+
     if (!category) {
-      throw new NotFoundException(`Không tìm thấy danh mục có ID = ${categoryId}`);
+      throw new NotFoundException(
+        `Danh mục không tồn tại hoặc bạn không có quyền!`,
+      );
     }
 
-    // 2. Tạo Transaction mới và gán Category vào
+    // 2. Tạo Transaction mới và gắn chủ sở hữu
     const newTransaction = this.transactionsRepository.create({
       ...transactionData,
-      category: category, // TypeORM sẽ tự lấy ID để lưu vào cột category_id
+      category: category,
+      user: { id: userId }, // Đóng dấu chủ sở hữu
     });
 
     return await this.transactionsRepository.save(newTransaction);
   }
 
-  async findAll() {
-    // relations: ['category'] giúp lấy luôn thông tin danh mục kèm theo
+  async findAll(userId: number) {
     return await this.transactionsRepository.find({
-      relations: ['category'], 
-      order: { date: 'DESC' } // Sắp xếp mới nhất lên đầu
+      where: { user: { id: userId } }, // Lọc theo user
+      relations: ['category'],
+      order: { date: 'DESC' }
     });
   }
 
-  async findOne(id: number) {
+  async findOne(id: number, userId: number) {
     const transaction = await this.transactionsRepository.findOne({
-      where: { id },
+      where: { id, user: { id: userId } }, // Check quyền
       relations: ['category'],
     });
-    if (!transaction) throw new NotFoundException('Giao dịch không tồn tại');
+    if (!transaction)
+      throw new NotFoundException(
+        "Giao dịch không tồn tại hoặc không có quyền",
+      );
     return transaction;
   }
-  
-  // 4. Cập nhật (Sửa)
-  async update(id: number, updateTransactionDto: UpdateTransactionDto) {
-    // Logic update ở đây
-    await this.transactionsRepository.update(id, updateTransactionDto);
-    return this.findOne(id);
-    // return `This action updates a #${id} transaction`;
+
+  async update(
+    id: number,
+    updateTransactionDto: UpdateTransactionDto,
+    userId: number,
+  ) {
+    await this.findOne(id, userId); // Check quyền trước
+
+    // Nếu họ muốn đổi Category, phải check lại Category mới
+    if (updateTransactionDto.categoryId) {
+      const category = await this.categoriesRepository.findOne({
+        where: { id: updateTransactionDto.categoryId, user: { id: userId } }
+      });
+      if (!category) throw new NotFoundException('Danh mục mới không hợp lệ');
+
+      const { categoryId, ...data } = updateTransactionDto;
+      await this.transactionsRepository.update(id, { ...data, category });
+    } else {
+      await this.transactionsRepository.update(id, updateTransactionDto);
+    }
+
+    return this.findOne(id, userId);
   }
 
   // 5. Xóa
-  async remove(id: number) {
-    return `This action removes a #${id} transaction`;
+  async remove(id: number, userId: number) {
+    await this.findOne(id, userId); // Check quyền trước
+    await this.transactionsRepository.delete(id);
   }
 }
